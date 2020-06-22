@@ -43,7 +43,8 @@ namespace Muplonen.Clients
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
                     using var connection = new GodotClientConnection(webSocket);
-                    await _clientManager.HandleClient(new ClientContext(connection));
+                    using var clientContext = new PlayerSession(connection);
+                    await _clientManager.HandleClient(clientContext);
                 }
                 else
                 {

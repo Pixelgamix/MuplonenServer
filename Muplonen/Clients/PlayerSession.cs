@@ -1,11 +1,12 @@
 ﻿using Muplonen.DataAccess;
+using System;
 
 namespace Muplonen.Clients
 {
     /// <summary>
     /// A player session context.
     /// </summary>
-    public class ClientContext : IClientContext
+    public class PlayerSession : IPlayerSession
     {
         /// <summary>
         /// Connection to the Godot client.
@@ -18,12 +19,23 @@ namespace Muplonen.Clients
         public PlayerAccount? PlayerAccount { get; set; }
 
         /// <summary>
-        /// Creates a new <see cref="ClientContext"/> instance.
+        /// The session's id.
+        /// </summary>
+        public Guid SessionId { get; } = Guid.NewGuid();
+
+        /// <summary>
+        /// Creates a new <see cref="PlayerSession"/> instance.
         /// </summary>
         /// <param name="connection">The connection to the Godot client.</param>
-        public ClientContext(GodotClientConnection connection)
+        public PlayerSession(GodotClientConnection connection)
         {
             Connection = connection;
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Connection.Dispose();
         }
     }
 }

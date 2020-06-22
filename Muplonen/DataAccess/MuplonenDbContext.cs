@@ -28,8 +28,9 @@ namespace Muplonen.DataAccess
             var playerAccountEntity = modelBuilder.Entity<PlayerAccount>();
             playerAccountEntity.HasKey(m => m.Id);
             playerAccountEntity.HasIndex(m => m.Accountname).IsUnique();
-            playerAccountEntity.Property(m => m.Accountname).HasMaxLength(10).IsRequired();
-            playerAccountEntity.Property(m => m.PasswordHash).HasMaxLength(48).IsRequired();
+            playerAccountEntity.Property(m => m.Accountname).HasMaxLength(16).IsRequired();
+            playerAccountEntity.Property(m => m.PasswordHash).HasMaxLength(48).IsFixedLength().IsRequired();
+            playerAccountEntity.Property(m => m.CreatedAt).IsRequired();
         }
     }
 }

@@ -38,12 +38,18 @@ namespace Muplonen.Clients.Messages
         /// </summary>
         /// <param name="serviceProvider"><see cref="IServiceProvider"/> to create the message handler with.</param>
         /// <param name="messageId">The message id that needs to be handled.</param>
-        /// <returns>The message handler or null, if there is no handler for the specified message.</returns>
-        public IMessageHandler? GetHandlerForMessageId(IServiceProvider serviceProvider, ushort messageId)
+        /// <param name="messageHandler">The handler able to handle the message.</param>
+        /// <returns>true, if a handler for the message id was returned. Otherwise false.</returns>
+        public bool TryGetHandlerForMessageId(IServiceProvider serviceProvider, ushort messageId, out IMessageHandler? messageHandler)
         {
-            if (_messageHandlerTypes.TryGetValue(messageId, out Type? messageHandlerType))
-                return (IMessageHandler)serviceProvider.GetService(messageHandlerType);
-            return null;
+            if (!_messageHandlerTypes.TryGetValue(messageId, out Type? messageHandlerType))
+            {
+                messageHandler = null;
+                return false;
+            }
+            
+            messageHandler = (IMessageHandler)serviceProvider.GetService(messageHandlerType);
+            return true;
         }
     }
 }

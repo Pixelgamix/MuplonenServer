@@ -47,6 +47,12 @@ namespace Muplonen.Clients
         }
 
         /// <summary>
+        /// Reads a byte.
+        /// </summary>
+        /// <returns>The read byte.</returns>
+        public byte ReadByte() => _binaryReader.ReadByte();
+
+        /// <summary>
         /// Reads an unsigned 16 bit integer.
         /// </summary>
         /// <returns>The read integer.</returns>
@@ -77,6 +83,12 @@ namespace Muplonen.Clients
             _binaryReader.BaseStream.Position = 0;
             _binaryWriter.BaseStream.Position = 0;
         }
+
+        /// <summary>
+        /// Writes a byte.
+        /// </summary>
+        /// <param name="number">The number to write.</param>
+        public void WriteByte(byte number) => _binaryWriter.Write(number);
 
         /// <summary>
         /// Writes an unsigned 16 bit integer.

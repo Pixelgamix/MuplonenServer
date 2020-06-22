@@ -4,6 +4,6 @@ namespace Muplonen.Clients.Messages
 {
     public interface IMessageHandler
     {
-        Task HandleMessage(IClientContext session, GodotMessage message);
+        Task HandleMessage(IPlayerSession session, GodotMessage message);
     }
 }

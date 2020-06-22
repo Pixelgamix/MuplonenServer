@@ -9,6 +9,7 @@ using Microsoft.Extensions.ObjectPool;
 using Muplonen.Clients;
 using Muplonen.Clients.Messages;
 using Muplonen.DataAccess;
+using Muplonen.Security;
 using System;
 
 namespace Muplonen
@@ -32,7 +33,10 @@ namespace Muplonen
             Configuration = configuration;
         }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+        /// <summary>
+        /// This method gets called by the runtime and adds services to the container. 
+        /// </summary>
+        /// <param name="services">Service collection to be populated with Muplonen services.</param>
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
@@ -40,10 +44,12 @@ namespace Muplonen
             // Register database
             services.AddDbContextPool<MuplonenDbContext>(options => options.UseNpgsql(Configuration.GetConnectionString("muplonen")));
 
+            // Register singletons
             services.AddSingleton<MessageHandlerTypes>();
             services.AddSingleton<ClientManager>();
+            services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
-            // Pool message objects
+            // Register poool for message objects
             services.TryAddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
             services.TryAddSingleton<ObjectPool<GodotMessage>>(serviceProvider =>
             {
@@ -86,7 +92,7 @@ namespace Muplonen
         }
 
         /// <summary>
-        /// Initializes the database.
+        /// Initializes the database and applies migrations.
         /// </summary>
         /// <param name="services">Configured services.</param>
         private void InitializeDatabase(IServiceCollection services)
@@ -95,7 +101,6 @@ namespace Muplonen
             using var scope = serviceProvider.CreateScope();
             using var dbContext = scope.ServiceProvider.GetRequiredService<MuplonenDbContext>();
             dbContext.Database.EnsureCreated();
-            dbContext.Database.Migrate();
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Muplonen.Clients
         /// <summary>
         /// Dictionary holding all authenticated and active clients.
         /// </summary>
-        public ConcurrentDictionary<Guid, ClientContext> Clients { get; } = new ConcurrentDictionary<Guid, ClientContext>();
+        public ConcurrentDictionary<Guid, PlayerSession> Clients { get; } = new ConcurrentDictionary<Guid, PlayerSession>();
 
         private readonly MessageHandlerTypes _messageHandlerTypes;
         private readonly ObjectPool<GodotMessage> _messageObjectPool;
@@ -51,9 +51,9 @@ namespace Muplonen.Clients
         /// <summary>
         /// The player session's main loop. Handles incoming messages.
         /// </summary>
-        /// <param name="clientContext">The client's context.</param>
+        /// <param name="playerSession">The players's session.</param>
         /// <returns></returns>
-        public async Task HandleClient(ClientContext clientContext)
+        public async Task HandleClient(PlayerSession playerSession)
         {
             var godotMessage = _messageObjectPool.Get();
 
@@ -61,39 +61,36 @@ namespace Muplonen.Clients
 
             try
             {
-
-                var result = await clientContext.Connection.Read(ref godotMessage);
-                while (!result.CloseStatus.HasValue)
+                var isMessageReceived = await playerSession.Connection.Read(godotMessage);
+                while (isMessageReceived)
                 {
-                    godotMessage.ResetPosition();
-
                     // Read message id and fetch message handler for the id
                     ushort messageId = godotMessage.ReadUInt16();
-                    var messageHandler = _messageHandlerTypes.GetHandlerForMessageId(scopedServiceProvider.ServiceProvider, messageId);
 
-                    if (messageHandler != null)
+                    if (_messageHandlerTypes.TryGetHandlerForMessageId(scopedServiceProvider.ServiceProvider, messageId, out IMessageHandler? messageHandler))
                     {
-                        await messageHandler.HandleMessage(clientContext, godotMessage);
-                        result = await clientContext.Connection.Read(ref godotMessage);
+                        await messageHandler!.HandleMessage(playerSession, godotMessage);
+                        isMessageReceived = await playerSession.Connection.Read(godotMessage);
                     }
                     else
                     {
-                        var errorMessage = $"Unknown message id: { messageId}";
-                        _logger.LogDebug(errorMessage);
-                        await clientContext.Connection.Close(WebSocketCloseStatus.ProtocolError, errorMessage);
-                        break;
+                        _logger.LogDebug("Received unknown message id {0} from session {1}. Aborting session loop.", messageId, playerSession.SessionId);
+                        isMessageReceived = false;
                     }
                 }
-                if (result.CloseStatus.HasValue)
-                    await clientContext.Connection.Close(result.CloseStatus.Value, result.CloseStatusDescription);
+            }
+            catch (WebSocketException ex)
+            {
+                // WebSocketExceptions are usually triggered by a client sending trash data and/or forcefully closing the connection.
+                _logger.LogDebug("Communication error with session {0}: {1}", playerSession.SessionId, ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during session loop. Closing connection to client.");
-                await clientContext.Connection.Close(WebSocketCloseStatus.InternalServerError, "Internal Server Error");
+                _logger.LogError(ex, "Unexpected error while handling session {0}.", playerSession.SessionId);
             }
             finally
             {
+                await playerSession.Connection.Close();
                 _messageObjectPool.Return(godotMessage);
             }
         }

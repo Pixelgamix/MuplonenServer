@@ -1,12 +1,18 @@
 ﻿using Muplonen.DataAccess;
+using System;
 
 namespace Muplonen.Clients
 {
     /// <summary>
     /// A player session context.
     /// </summary>
-    public interface IClientContext
+    public interface IPlayerSession : IDisposable
     {
+        /// <summary>
+        /// The session's id.
+        /// </summary>
+        Guid SessionId { get; }
+
         /// <summary>
         /// Connection to the Godot client.
         /// </summary>
