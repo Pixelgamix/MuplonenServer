@@ -9,21 +9,21 @@ namespace Muplonen.Clients
     /// <summary>
     /// Accepts <see cref="WebSocket"/> connections and manages a player's session main loop.
     /// </summary>
-    public sealed class ClientSessionMiddleware
+    public sealed class MuplonenSessionMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger<ClientSessionMiddleware> _logger;
-        private readonly ClientManager _clientManager;
+        private readonly ILogger<MuplonenSessionMiddleware> _logger;
+        private readonly PlayerSessionManager _clientManager;
 
         /// <summary>
-        /// Creates a new <see cref="ClientSessionMiddleware"/> instance.
+        /// Creates a new <see cref="MuplonenSessionMiddleware"/> instance.
         /// </summary>
         /// <param name="next">The next middleware to execute in the pipeline.</param>
         /// <param name="logger">Logging.</param>
-        public ClientSessionMiddleware(
+        public MuplonenSessionMiddleware(
             RequestDelegate next,
-            ILogger<ClientSessionMiddleware> logger,
-            ClientManager clientManager)
+            ILogger<MuplonenSessionMiddleware> logger,
+            PlayerSessionManager clientManager)
         {
             _next = next;
             _logger = logger;

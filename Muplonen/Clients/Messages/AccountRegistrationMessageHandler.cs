@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Muplonen.DataAccess;
 using Muplonen.Security;
@@ -15,6 +16,7 @@ namespace Muplonen.Clients.Messages
         private readonly IPasswordHasher _passwordHasher;
         private readonly MuplonenDbContext _muplonenDbContext;
         private readonly ObjectPool<GodotMessage> _messageObjectPool;
+        private readonly ILogger<AccountLoginMessageHandler> _logger;
 
         /// <summary>
         /// Creates a new <see cref="AccountRegistrationMessageHandler"/> instance.
@@ -22,23 +24,21 @@ namespace Muplonen.Clients.Messages
         /// <param name="passwordHasher">Hasher for creating password hashes.</param>
         /// <param name="muplonenDbContext">The database context.</param>
         /// <param name="messageObjectPool">Pool for providing <see cref="GodotMessage"/> instances.</param>
+        /// <param name="logger">Logging.</param>
         public AccountRegistrationMessageHandler(
             IPasswordHasher passwordHasher,
             MuplonenDbContext muplonenDbContext,
-            ObjectPool<GodotMessage> messageObjectPool)
+            ObjectPool<GodotMessage> messageObjectPool,
+            ILogger<AccountLoginMessageHandler> logger)
         {
             _passwordHasher = passwordHasher;
             _muplonenDbContext = muplonenDbContext;
             _messageObjectPool = messageObjectPool;
+            _logger = logger;
         }
 
-        /// <summary>
-        /// Handles the account registration request.
-        /// </summary>
-        /// <param name="session">The client's context.</param>
-        /// <param name="message">The client's message.</param>
-        /// <returns></returns>
-        public async Task HandleMessage(IPlayerSession session, GodotMessage message)
+        /// <inheritdoc/>
+        public async Task<bool> HandleMessage(IPlayerSession session, GodotMessage message)
         {
             var reply = _messageObjectPool.Get();
             try
@@ -54,8 +54,7 @@ namespace Muplonen.Clients.Messages
                     reply.WriteByte(0);
                     reply.WriteString("Account name already in use. Please choose a different name.");
                     await session.Connection.Send(reply);
-                    await session.Connection.Close();
-                    return;
+                    return false;
                 }
 
                 var hashedPassword = _passwordHasher.CreateHashedPassword(password);
@@ -64,6 +63,7 @@ namespace Muplonen.Clients.Messages
                 var account = new PlayerAccount() { Accountname = accountname, PasswordHash = hashedPassword };
                 _muplonenDbContext.Add(account);
                 await _muplonenDbContext.SaveChangesAsync();
+                _logger.LogInformation("Account \"{0}\" ({1}) created by session {2}", accountname, account.Id, session.SessionId);
 
                 // Tell the client that the account has been created and close the connection.
                 reply.WriteUInt16(1);
@@ -71,6 +71,7 @@ namespace Muplonen.Clients.Messages
                 reply.WriteString("Account created. You can now log in.");
                 await session.Connection.Send(reply);
                 await session.Connection.Close();
+                return true;
             }
             finally
             {

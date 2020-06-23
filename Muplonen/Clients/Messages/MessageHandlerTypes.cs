@@ -47,7 +47,7 @@ namespace Muplonen.Clients.Messages
                 messageHandler = null;
                 return false;
             }
-            
+
             messageHandler = (IMessageHandler)serviceProvider.GetService(messageHandlerType);
             return true;
         }

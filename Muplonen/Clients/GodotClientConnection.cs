@@ -15,6 +15,11 @@ namespace Muplonen.Clients
         /// </summary>
         public WebSocketReceiveResult Status { get; private set; } = new WebSocketReceiveResult(0, WebSocketMessageType.Binary, true);
 
+        /// <summary>
+        /// Timestamp of the last message received by the client.
+        /// </summary>
+        public DateTime LastMessageReceivedAt { get; private set; }
+
         private readonly WebSocket _webSocket;
         private bool _isClosed;
 
@@ -40,7 +45,11 @@ namespace Muplonen.Clients
 
             message.ResetPosition();
             Status = await _webSocket.ReceiveAsync(new ArraySegment<byte>(message.Buffer, 0, message.Buffer.Length), CancellationToken.None);
-            return !Status.CloseStatus.HasValue;
+            if (Status.CloseStatus.HasValue)
+                return false;
+
+            LastMessageReceivedAt = DateTime.Now;
+            return true;
         }
 
         /// <summary>
@@ -63,21 +72,21 @@ namespace Muplonen.Clients
         /// <param name="closeStatus">Reason for closing the connection (if no Status.CloseStatus is set).</param>
         /// <param name="statusDescription">Description of the reason (if no Status.CloseStatus is set).</param>
         /// <returns></returns>
-        public Task Close(WebSocketCloseStatus closeStatus = WebSocketCloseStatus.Empty, string statusDescription = "")
+        public async Task Close(WebSocketCloseStatus closeStatus = WebSocketCloseStatus.Empty, string statusDescription = "")
         {
             if (_isClosed)
-                return Task.CompletedTask;
+                return;
 
             _isClosed = true;
 
             // WebSocket must be in state "Open", "CloseReceived" or "CloseSent"
             if (_webSocket.State != WebSocketState.Open && _webSocket.State != WebSocketState.CloseReceived && _webSocket.State != WebSocketState.CloseSent)
-                return Task.CompletedTask;
+                return;
 
             if (Status.CloseStatus.HasValue)
-                return _webSocket.CloseAsync(Status.CloseStatus.Value, Status.CloseStatusDescription, CancellationToken.None);
-
-            return _webSocket.CloseAsync(closeStatus, statusDescription, CancellationToken.None);
+                await _webSocket.CloseAsync(Status.CloseStatus.Value, Status.CloseStatusDescription, CancellationToken.None);
+            else
+                await _webSocket.CloseAsync(closeStatus, statusDescription, CancellationToken.None);
         }
 
         /// <summary>
@@ -85,7 +94,6 @@ namespace Muplonen.Clients
         /// </summary>
         public void Dispose()
         {
-            Close();
             _webSocket.Dispose();
         }
     }

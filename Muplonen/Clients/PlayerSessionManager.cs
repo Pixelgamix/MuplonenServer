@@ -12,35 +12,30 @@ namespace Muplonen.Clients
     /// <summary>
     /// Manages game clients.
     /// </summary>
-    public sealed class ClientManager
+    public sealed class PlayerSessionManager
     {
-        /// <summary>
-        /// Bag with clients that did not authenticate themselves yet.
-        /// </summary>
-        public ConcurrentBag<GodotClientConnection> ClientsWithoutAuthentication { get; } = new ConcurrentBag<GodotClientConnection>();
-
         /// <summary>
         /// Dictionary holding all authenticated and active clients.
         /// </summary>
-        public ConcurrentDictionary<Guid, PlayerSession> Clients { get; } = new ConcurrentDictionary<Guid, PlayerSession>();
+        public ConcurrentDictionary<Guid, IPlayerSession> Clients { get; } = new ConcurrentDictionary<Guid, IPlayerSession>();
 
         private readonly MessageHandlerTypes _messageHandlerTypes;
         private readonly ObjectPool<GodotMessage> _messageObjectPool;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<ClientManager> _logger;
+        private readonly ILogger<PlayerSessionManager> _logger;
 
         /// <summary>
-        /// Creates a new <see cref="ClientManager"/> instance.
+        /// Creates a new <see cref="PlayerSessionManager"/> instance.
         /// </summary>
         /// <param name="messageHandlerTypes">Available message handler types.</param>
         /// <param name="messageObjectPool">Pool for message objects.</param>
         /// <param name="serviceProvider">Service provider for fetching implementations.</param>
         /// <param name="logger">Logging.</param>
-        public ClientManager(
+        public PlayerSessionManager(
             MessageHandlerTypes messageHandlerTypes,
             ObjectPool<GodotMessage> messageObjectPool,
             IServiceProvider serviceProvider,
-            ILogger<ClientManager> logger)
+            ILogger<PlayerSessionManager> logger)
         {
             _messageHandlerTypes = messageHandlerTypes;
             _messageObjectPool = messageObjectPool;
@@ -61,21 +56,22 @@ namespace Muplonen.Clients
 
             try
             {
-                var isMessageReceived = await playerSession.Connection.Read(godotMessage);
-                while (isMessageReceived)
+                var isSessionAlive = await playerSession.Connection.Read(godotMessage);
+                while (isSessionAlive)
                 {
                     // Read message id and fetch message handler for the id
                     ushort messageId = godotMessage.ReadUInt16();
 
                     if (_messageHandlerTypes.TryGetHandlerForMessageId(scopedServiceProvider.ServiceProvider, messageId, out IMessageHandler? messageHandler))
                     {
-                        await messageHandler!.HandleMessage(playerSession, godotMessage);
-                        isMessageReceived = await playerSession.Connection.Read(godotMessage);
+                        isSessionAlive = await messageHandler!.HandleMessage(playerSession, godotMessage);
+                        if (isSessionAlive)
+                            isSessionAlive = await playerSession.Connection.Read(godotMessage);
                     }
                     else
                     {
                         _logger.LogDebug("Received unknown message id {0} from session {1}. Aborting session loop.", messageId, playerSession.SessionId);
-                        isMessageReceived = false;
+                        isSessionAlive = false;
                     }
                 }
             }
@@ -90,6 +86,11 @@ namespace Muplonen.Clients
             }
             finally
             {
+                if (playerSession.PlayerAccount != null)
+                    Clients.TryRemove(playerSession.PlayerAccount.Id, out _);
+
+                _logger.LogInformation("Disconnecting session {0}", playerSession.SessionId);
+
                 await playerSession.Connection.Close();
                 _messageObjectPool.Return(godotMessage);
             }

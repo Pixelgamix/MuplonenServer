@@ -10,6 +10,7 @@ using Muplonen.Clients;
 using Muplonen.Clients.Messages;
 using Muplonen.DataAccess;
 using Muplonen.Security;
+using Muplonen.Services;
 using System;
 
 namespace Muplonen
@@ -46,7 +47,7 @@ namespace Muplonen
 
             // Register singletons
             services.AddSingleton<MessageHandlerTypes>();
-            services.AddSingleton<ClientManager>();
+            services.AddSingleton<PlayerSessionManager>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
             // Register poool for message objects
@@ -63,6 +64,9 @@ namespace Muplonen
                 services.AddScoped(messageHandler);
 
             InitializeDatabase(services);
+
+            // Start services
+            services.AddHostedService<PlayerTimeoutDetectionService>();
         }
 
         /// <summary>
@@ -88,7 +92,7 @@ namespace Muplonen
 
             app.UseWebSockets();
 
-            app.UseMiddleware<ClientSessionMiddleware>();
+            app.UseMiddleware<MuplonenSessionMiddleware>();
         }
 
         /// <summary>
