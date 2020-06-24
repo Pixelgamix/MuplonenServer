@@ -13,6 +13,11 @@ namespace Muplonen.DataAccess
         public DbSet<PlayerAccount>? PlayerAccounts { get; set; }
 
         /// <summary>
+        /// Player characters.
+        /// </summary>
+        public DbSet<PlayerCharacter>? PlayerCharacters { get; set; }
+
+        /// <summary>
         /// Creates a new <see cref="MuplonenDbContext"/> with the specified context options.
         /// </summary>
         /// <param name="dbContextOptions">Options for the context.</param>
@@ -25,12 +30,20 @@ namespace Muplonen.DataAccess
         /// <inheritdoc/>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var playerAccountEntity = modelBuilder.Entity<PlayerAccount>();
-            playerAccountEntity.HasKey(m => m.Id);
-            playerAccountEntity.HasIndex(m => m.Accountname).IsUnique();
-            playerAccountEntity.Property(m => m.Accountname).HasMaxLength(16).IsRequired();
-            playerAccountEntity.Property(m => m.PasswordHash).HasMaxLength(48).IsFixedLength().IsRequired();
-            playerAccountEntity.Property(m => m.CreatedAt).IsRequired();
+            var playerAccount = modelBuilder.Entity<PlayerAccount>();
+            playerAccount.HasKey(m => m.Id);
+            playerAccount.HasIndex(m => m.Accountname).IsUnique();
+            playerAccount.Property(m => m.Accountname).HasMaxLength(16).IsRequired();
+            playerAccount.Property(m => m.PasswordHash).HasMaxLength(48).IsFixedLength().IsRequired();
+            playerAccount.Property(m => m.CreatedAt).IsRequired();
+
+            var playerCharacter = modelBuilder.Entity<PlayerCharacter>();
+            playerCharacter.HasKey(m => m.Id);
+            playerCharacter.HasIndex(m => m.Charactername).IsUnique();
+            playerCharacter.HasOne(m => m.PlayerAccount).WithMany(m => m!.PlayerCharacters);
+            playerCharacter.Property(m => m.Charactername).HasMaxLength(16).IsRequired();
+            playerCharacter.Property(m => m.CreatedAt).IsRequired();
+            playerCharacter.Property(m => m.PlayerAccountId).IsRequired();
         }
     }
 }

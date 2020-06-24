@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Muplonen.Clients.Messages
+namespace Muplonen.Clients.MessageHandlers
 {
     /// <summary>
     /// Interface for handlers that handle client messages.

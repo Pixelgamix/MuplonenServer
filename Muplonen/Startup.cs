@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.ObjectPool;
 using Muplonen.Clients;
-using Muplonen.Clients.Messages;
+using Muplonen.Clients.MessageHandlers;
 using Muplonen.DataAccess;
 using Muplonen.Security;
 using Muplonen.Services;
@@ -47,7 +47,7 @@ namespace Muplonen
 
             // Register singletons
             services.AddSingleton<MessageHandlerTypes>();
-            services.AddSingleton<PlayerSessionManager>();
+            services.AddSingleton<IPlayerSessionManager, PlayerSessionManager>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
             // Register poool for message objects

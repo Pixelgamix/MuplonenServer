@@ -8,19 +8,16 @@ namespace Muplonen.Clients
     /// </summary>
     public class PlayerSession : IPlayerSession
     {
-        /// <summary>
-        /// Connection to the Godot client.
-        /// </summary>
+        /// <inheritdoc/>
         public GodotClientConnection Connection { get; private set; }
 
-        /// <summary>
-        /// The player's account.
-        /// </summary>
+        /// <inheritdoc/>
         public PlayerAccount? PlayerAccount { get; set; }
 
-        /// <summary>
-        /// The session's id.
-        /// </summary>
+        /// <inheritdoc/>
+        public PlayerCharacter? PlayerCharacter { get; set; }
+
+        /// <inheritdoc/>
         public Guid SessionId { get; } = Guid.NewGuid();
 
         /// <summary>

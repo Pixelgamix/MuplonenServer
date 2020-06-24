@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Muplonen.Clients.Messages
+namespace Muplonen.Clients.MessageHandlers
 {
     /// <summary>
     /// Provides access to all known message handlers.
@@ -48,7 +49,7 @@ namespace Muplonen.Clients.Messages
                 return false;
             }
 
-            messageHandler = (IMessageHandler)serviceProvider.GetService(messageHandlerType);
+            messageHandler = (IMessageHandler)serviceProvider.GetRequiredService(messageHandlerType);
             return true;
         }
     }

@@ -13,7 +13,7 @@ namespace Muplonen.Services
     public class PlayerTimeoutDetectionService : IHostedService, IDisposable
     {
         private static readonly int _timeoutInMilliseconds = 30 * 1000; // 30 seconds
-        private readonly PlayerSessionManager _clientManager;
+        private readonly IPlayerSessionManager _clientManager;
         private readonly ILogger<PlayerTimeoutDetectionService> _logger;
         private Timer? _timer;
 
@@ -23,7 +23,7 @@ namespace Muplonen.Services
         /// <param name="clientManager">The client manager.</param>
         /// <param name="logger">Logging.</param>
         public PlayerTimeoutDetectionService(
-            PlayerSessionManager clientManager,
+            IPlayerSessionManager clientManager,
             ILogger<PlayerTimeoutDetectionService> logger)
         {
             _clientManager = clientManager;

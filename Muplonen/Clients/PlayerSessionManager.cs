@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
-using Muplonen.Clients.Messages;
+using Muplonen.Clients.MessageHandlers;
 using System;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
@@ -10,13 +10,11 @@ using System.Threading.Tasks;
 namespace Muplonen.Clients
 {
     /// <summary>
-    /// Manages game clients.
+    /// Manages player sessions.
     /// </summary>
-    public sealed class PlayerSessionManager
+    public sealed class PlayerSessionManager : IPlayerSessionManager
     {
-        /// <summary>
-        /// Dictionary holding all authenticated and active clients.
-        /// </summary>
+        /// <inheritdoc/>
         public ConcurrentDictionary<Guid, IPlayerSession> Clients { get; } = new ConcurrentDictionary<Guid, IPlayerSession>();
 
         private readonly MessageHandlerTypes _messageHandlerTypes;
@@ -43,11 +41,7 @@ namespace Muplonen.Clients
             _logger = logger;
         }
 
-        /// <summary>
-        /// The player session's main loop. Handles incoming messages.
-        /// </summary>
-        /// <param name="playerSession">The players's session.</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task HandleClient(PlayerSession playerSession)
         {
             var godotMessage = _messageObjectPool.Get();

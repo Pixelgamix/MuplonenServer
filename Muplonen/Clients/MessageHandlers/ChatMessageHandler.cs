@@ -2,7 +2,7 @@
 using Microsoft.Extensions.ObjectPool;
 using System.Threading.Tasks;
 
-namespace Muplonen.Clients.Messages
+namespace Muplonen.Clients.MessageHandlers
 {
     /// <summary>
     /// Handles chat messages.
@@ -10,7 +10,7 @@ namespace Muplonen.Clients.Messages
     [MessageHandler(3)]
     public class ChatMessageHandler : IMessageHandler
     {
-        private readonly PlayerSessionManager _clientManager;
+        private readonly IPlayerSessionManager _clientManager;
         private readonly ObjectPool<GodotMessage> _messageObjectPool;
         private readonly ILogger<ChatMessageHandler> _logger;
 
@@ -21,7 +21,7 @@ namespace Muplonen.Clients.Messages
         /// <param name="messageObjectPool">Pool for providing <see cref="GodotMessage"/> instances.</param>
         /// <param name="logger">Logging.</param>
         public ChatMessageHandler(
-            PlayerSessionManager clientManager,
+            IPlayerSessionManager clientManager,
             ObjectPool<GodotMessage> messageObjectPool,
             ILogger<ChatMessageHandler> logger)
         {
@@ -34,16 +34,16 @@ namespace Muplonen.Clients.Messages
         /// <inheritdoc/>
         public async Task<bool> HandleMessage(IPlayerSession session, GodotMessage message)
         {
-            if (session.PlayerAccount == null) return false;
+            if (session.PlayerAccount == null || session.PlayerCharacter == null) return false;
 
             var text = message.ReadString();
-            _logger.LogInformation("\"{0}\" ({1}) said: \"{2}\"", session.PlayerAccount.Accountname, session.SessionId, text);
+            _logger.LogInformation("\"{0}\" ({1}) said: \"{2}\"", session.PlayerCharacter.Charactername, session.SessionId, text);
 
             var reply = _messageObjectPool.Get();
             try
             {
                 reply.WriteUInt16(3);
-                reply.WriteString(session.PlayerAccount.Accountname);
+                reply.WriteString(session.PlayerCharacter.Charactername);
                 reply.WriteString(text);
 
                 foreach (var client in _clientManager.Clients.Values)

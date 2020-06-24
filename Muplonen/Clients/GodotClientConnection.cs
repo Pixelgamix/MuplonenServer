@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.ObjectPool;
+using System;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace Muplonen.Clients
         public DateTime LastMessageReceivedAt { get; private set; }
 
         private readonly WebSocket _webSocket;
+        private readonly ObjectPool<GodotMessage> _messageObjectPool;
         private bool _isClosed;
 
         /// <summary>
@@ -28,9 +30,13 @@ namespace Muplonen.Clients
         /// <see cref="WebSocket"/> to communicate with the client.
         /// </summary>
         /// <param name="webSocket">The WebSocket to use.</param>
-        public GodotClientConnection(WebSocket webSocket)
+        /// <param name="messageObjectPool">Pool for creating messages.</param>
+        public GodotClientConnection(
+            WebSocket webSocket,
+            ObjectPool<GodotMessage> messageObjectPool)
         {
             _webSocket = webSocket;
+            _messageObjectPool = messageObjectPool;
         }
 
         /// <summary>
@@ -63,6 +69,27 @@ namespace Muplonen.Clients
                 return Task.CompletedTask;
 
             return _webSocket.SendAsync(new ArraySegment<byte>(message.Buffer, 0, message.WritePosition), WebSocketMessageType.Binary, true, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Allows the caller to build a message that will be send to the client afterwards.
+        /// </summary>
+        /// <param name="messageId">The message's id.</param>
+        /// <param name="messageBuilder">The action to populate the message with data.</param>
+        /// <returns></returns>
+        public async Task BuildAndSend(ushort messageId, Action<GodotMessage> messageBuilder)
+        {
+            var message = _messageObjectPool.Get();
+            try
+            {
+                message.WriteUInt16(messageId);
+                messageBuilder(message);
+                await _webSocket.SendAsync(new ArraySegment<byte>(message.Buffer, 0, message.WritePosition), WebSocketMessageType.Binary, true, CancellationToken.None);
+            }
+            finally
+            {
+                _messageObjectPool.Return(message);
+            }
         }
 
         /// <summary>

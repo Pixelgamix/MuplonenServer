@@ -22,5 +22,10 @@ namespace Muplonen.Clients
         /// The player's account.
         /// </summary>
         PlayerAccount? PlayerAccount { get; set; }
+
+        /// <summary>
+        /// The player's selected character.
+        /// </summary>
+        PlayerCharacter? PlayerCharacter { get; set; }
     }
 }

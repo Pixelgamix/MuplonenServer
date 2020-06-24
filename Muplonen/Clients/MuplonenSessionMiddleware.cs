@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.ObjectPool;
 using System.Net;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
@@ -13,7 +14,8 @@ namespace Muplonen.Clients
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<MuplonenSessionMiddleware> _logger;
-        private readonly PlayerSessionManager _clientManager;
+        private readonly IPlayerSessionManager _clientManager;
+        private readonly ObjectPool<GodotMessage> _messageObjectPool;
 
         /// <summary>
         /// Creates a new <see cref="MuplonenSessionMiddleware"/> instance.
@@ -23,11 +25,13 @@ namespace Muplonen.Clients
         public MuplonenSessionMiddleware(
             RequestDelegate next,
             ILogger<MuplonenSessionMiddleware> logger,
-            PlayerSessionManager clientManager)
+            IPlayerSessionManager clientManager,
+            ObjectPool<GodotMessage> messageObjectPool)
         {
             _next = next;
             _logger = logger;
             _clientManager = clientManager;
+            _messageObjectPool = messageObjectPool;
         }
 
         /// <summary>
@@ -42,7 +46,7 @@ namespace Muplonen.Clients
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    using var connection = new GodotClientConnection(webSocket);
+                    using var connection = new GodotClientConnection(webSocket, _messageObjectPool);
                     using var clientContext = new PlayerSession(connection);
                     await _clientManager.HandleClient(clientContext);
                 }
