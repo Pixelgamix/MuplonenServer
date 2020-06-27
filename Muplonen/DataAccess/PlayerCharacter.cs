@@ -31,5 +31,15 @@ namespace Muplonen.DataAccess
         /// The <see cref="PlayerAccount"/> this character belongs to.
         /// </summary>
         public PlayerAccount? PlayerAccount { get; set; }
+
+        /// <summary>
+        /// The room's template id the character was last located in.
+        /// </summary>
+        public Guid? RoomTemplateId { get; set; }
+
+        /// <summary>
+        /// The <see cref="RoomTemplate"/> the character was last located in.
+        /// </summary>
+        public RoomTemplate? RoomTemplate { get; set; }
     }
 }

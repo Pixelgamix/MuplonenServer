@@ -1,16 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Muplonen.DataAccess;
+using Muplonen.SessionManagement;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Muplonen.Clients.MessageHandlers
+namespace Muplonen.GameSystems.AccountSystem
 {
     /// <summary>
     /// Handles requests for an account's list of characters.
     /// </summary>
-    [MessageHandler(4)]
+    [MessageHandler(IncomingMessages.CharacterList)]
     public class CharacterListMessageHandler : IMessageHandler
     {
         private readonly MuplonenDbContext _muplonenDbContext;
@@ -33,7 +34,7 @@ namespace Muplonen.Clients.MessageHandlers
                     .Where(character => character.PlayerAccountId == session.PlayerAccount.Id)
                     .ToListAsync();
 
-            await session.Connection.BuildAndSend(4, reply =>
+            await session.Connection.BuildAndSend(OutgoingMessages.CharacterList, reply =>
             {
                 if (characters == null || characters.Count == 0)
                 {

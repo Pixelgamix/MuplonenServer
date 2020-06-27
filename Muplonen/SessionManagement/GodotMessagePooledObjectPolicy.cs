@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.ObjectPool;
 
-namespace Muplonen.Clients
+namespace Muplonen.SessionManagement
 {
     /// <summary>
     /// Creates and recycles <see cref="GodotMessage"/> instances for use in a pool.

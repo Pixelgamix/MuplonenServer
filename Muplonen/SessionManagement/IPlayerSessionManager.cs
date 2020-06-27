@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Muplonen.Clients
+namespace Muplonen.SessionManagement
 {
     /// <summary>
     /// Interfaces for managers that manage player sessions.
@@ -10,9 +8,9 @@ namespace Muplonen.Clients
     public interface IPlayerSessionManager
     {
         /// <summary>
-        /// Dictionary holding all authenticated and active clients.
+        /// Dictionary holding all sessions.
         /// </summary>
-        ConcurrentDictionary<Guid, IPlayerSession> Clients { get; }
+        SessionDictionary Sessions { get; }
 
         /// <summary>
         /// The player session's main loop. Handles incoming messages.

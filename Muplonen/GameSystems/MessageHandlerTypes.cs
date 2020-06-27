@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Muplonen.Clients.MessageHandlers
+namespace Muplonen.GameSystems
 {
     /// <summary>
     /// Provides access to all known message handlers.

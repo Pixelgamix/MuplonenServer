@@ -18,6 +18,11 @@ namespace Muplonen.DataAccess
         public DbSet<PlayerCharacter>? PlayerCharacters { get; set; }
 
         /// <summary>
+        /// Room templates.
+        /// </summary>
+        public DbSet<RoomTemplate>? RoomTemplates { get; set; }
+
+        /// <summary>
         /// Creates a new <see cref="MuplonenDbContext"/> with the specified context options.
         /// </summary>
         /// <param name="dbContextOptions">Options for the context.</param>
@@ -41,9 +46,14 @@ namespace Muplonen.DataAccess
             playerCharacter.HasKey(m => m.Id);
             playerCharacter.HasIndex(m => m.Charactername).IsUnique();
             playerCharacter.HasOne(m => m.PlayerAccount).WithMany(m => m!.PlayerCharacters);
+            playerCharacter.HasOne(m => m.RoomTemplate).WithMany(m => m!.PlayerCharacters);
             playerCharacter.Property(m => m.Charactername).HasMaxLength(16).IsRequired();
             playerCharacter.Property(m => m.CreatedAt).IsRequired();
             playerCharacter.Property(m => m.PlayerAccountId).IsRequired();
+
+            var roomTemplate = modelBuilder.Entity<RoomTemplate>();
+            roomTemplate.HasKey(m => m.Id);
+            roomTemplate.Property(m => m.Title).HasMaxLength(64).IsRequired();
         }
     }
 }

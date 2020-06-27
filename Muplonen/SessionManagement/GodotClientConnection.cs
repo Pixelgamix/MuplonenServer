@@ -4,7 +4,7 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Muplonen.Clients
+namespace Muplonen.SessionManagement
 {
     /// <summary>
     /// Connection to a Godot client.
@@ -24,6 +24,11 @@ namespace Muplonen.Clients
         private readonly WebSocket _webSocket;
         private readonly ObjectPool<GodotMessage> _messageObjectPool;
         private bool _isClosed;
+
+        /// <summary>
+        /// Event that is triggered when the connection is closed.
+        /// </summary>
+        public event EventHandler? ConnectionClosed;
 
         /// <summary>
         /// Creates a new <see cref="GodotClientConnection"/> instance that uses the specified
@@ -46,7 +51,7 @@ namespace Muplonen.Clients
         /// <returns>true if a message was received, otherwise false.</returns>
         public async Task<bool> Read(GodotMessage message)
         {
-            if (_isClosed)
+            if (_isClosed || _webSocket.State == WebSocketState.Aborted || _webSocket.State == WebSocketState.Closed)
                 return false;
 
             message.ResetPosition();
@@ -59,16 +64,41 @@ namespace Muplonen.Clients
         }
 
         /// <summary>
-        /// Sends a message to the client.
+        /// Sends the specified message.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <returns></returns>
-        public Task Send(GodotMessage message)
+        public async Task Send(GodotMessage message)
         {
-            if (_isClosed)
-                return Task.CompletedTask;
+            try
+            {
+                if (_webSocket.State == WebSocketState.Open)
+                    await _webSocket.SendAsync(new ArraySegment<byte>(message.Buffer, 0, message.WritePosition), WebSocketMessageType.Binary, true, CancellationToken.None);
+            }
+            catch (WebSocketException)
+            {
+                await Close();
+            }
+        }
 
-            return _webSocket.SendAsync(new ArraySegment<byte>(message.Buffer, 0, message.WritePosition), WebSocketMessageType.Binary, true, CancellationToken.None);
+        /// <summary>
+        /// Allows the caller to build a message and use the action to use said message to send it to multiple receipients.
+        /// </summary>
+        /// <param name="messageId">The message id.</param>
+        /// <param name="messageBuilderAndSender">Action to build the message and send it.</param>
+        /// <returns></returns>
+        public async Task Build(ushort messageId, Func<GodotMessage, Task> messageBuilderAndSender)
+        {
+            var message = _messageObjectPool.Get();
+            try
+            {
+                message.WriteUInt16(messageId);
+                await messageBuilderAndSender(message);
+            }
+            finally
+            {
+                _messageObjectPool.Return(message);
+            }
         }
 
         /// <summary>
@@ -84,7 +114,7 @@ namespace Muplonen.Clients
             {
                 message.WriteUInt16(messageId);
                 messageBuilder(message);
-                await _webSocket.SendAsync(new ArraySegment<byte>(message.Buffer, 0, message.WritePosition), WebSocketMessageType.Binary, true, CancellationToken.None);
+                await Send(message);
             }
             finally
             {
@@ -114,6 +144,8 @@ namespace Muplonen.Clients
                 await _webSocket.CloseAsync(Status.CloseStatus.Value, Status.CloseStatusDescription, CancellationToken.None);
             else
                 await _webSocket.CloseAsync(closeStatus, statusDescription, CancellationToken.None);
+
+            ConnectionClosed?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

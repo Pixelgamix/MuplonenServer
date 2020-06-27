@@ -1,6 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using Muplonen.SessionManagement;
+using System.Threading.Tasks;
 
-namespace Muplonen.Clients.MessageHandlers
+namespace Muplonen.GameSystems
 {
     /// <summary>
     /// Interface for handlers that handle client messages.

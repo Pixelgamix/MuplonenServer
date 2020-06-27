@@ -2,14 +2,15 @@
 using Microsoft.Extensions.Logging;
 using Muplonen.DataAccess;
 using Muplonen.Security;
+using Muplonen.SessionManagement;
 using System.Threading.Tasks;
 
-namespace Muplonen.Clients.MessageHandlers
+namespace Muplonen.GameSystems.AccountSystem
 {
     /// <summary>
     /// Handles account registration requests.
     /// </summary>
-    [MessageHandler(1)]
+    [MessageHandler(IncomingMessages.AccountRegistration)]
     public class AccountRegistrationMessageHandler : IMessageHandler
     {
         private readonly IPasswordHasher _passwordHasher;
@@ -21,7 +22,6 @@ namespace Muplonen.Clients.MessageHandlers
         /// </summary>
         /// <param name="passwordHasher">Hasher for creating password hashes.</param>
         /// <param name="muplonenDbContext">The database context.</param>
-        /// <param name="messageObjectPool">Pool for providing <see cref="GodotMessage"/> instances.</param>
         /// <param name="logger">Logging.</param>
         public AccountRegistrationMessageHandler(
             IPasswordHasher passwordHasher,
@@ -46,7 +46,7 @@ namespace Muplonen.Clients.MessageHandlers
 
             if (accountAlreadyExists)
             {
-                await session.Connection.BuildAndSend(1, reply =>
+                await session.Connection.BuildAndSend(OutgoingMessages.AccountRegistration, reply =>
                 {
                     reply.WriteByte(0);
                     reply.WriteString("Account name already in use. Please choose a different name.");
@@ -63,7 +63,7 @@ namespace Muplonen.Clients.MessageHandlers
             _logger.LogInformation("Account \"{0}\" ({1}) created by session {2}", accountname, account.Id, session.SessionId);
 
             // Tell the client that the account has been created and close the connection.
-            await session.Connection.BuildAndSend(1, reply =>
+            await session.Connection.BuildAndSend(OutgoingMessages.AccountRegistration, reply =>
             {
                 reply.WriteByte(1);
                 reply.WriteString("Account created. You can now log in.");

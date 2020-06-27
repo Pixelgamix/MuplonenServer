@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Muplonen.Clients;
+using Muplonen.SessionManagement;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,7 +66,7 @@ namespace Muplonen.Services
         private void DetectAndDisconnectTimeoutClients(object? state)
         {
             var now = DateTime.Now;
-            foreach (var session in _clientManager.Clients.Values)
+            foreach (var session in _clientManager.Sessions.AllSessions)
             {
                 if ((now - session.Connection.LastMessageReceivedAt).TotalMilliseconds > _timeoutInMilliseconds)
                 {

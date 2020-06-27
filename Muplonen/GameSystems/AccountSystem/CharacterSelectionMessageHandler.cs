@@ -1,29 +1,36 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Muplonen.DataAccess;
+using Muplonen.SessionManagement;
+using Muplonen.World;
+using System;
 using System.Threading.Tasks;
 
-namespace Muplonen.Clients.MessageHandlers
+namespace Muplonen.GameSystems.AccountSystem
 {
     /// <summary>
     /// Handles character selection request messages.
     /// </summary>
-    [MessageHandler(6)]
+    [MessageHandler(IncomingMessages.CharacterSelection)]
     public class CharacterSelectionMessageHandler : IMessageHandler
     {
         private readonly MuplonenDbContext _muplonenDbContext;
+        private readonly IRoomManager _roomManager;
         private readonly ILogger<CharacterSelectionMessageHandler> _logger;
 
         /// <summary>
         /// Creates a new <see cref="CharacterSelectionMessageHandler"/> instance.
         /// </summary>
         /// <param name="muplonenDbContext">The database context.</param>
+        /// <param name="roomManager">The room manager.</param>
         /// <param name="logger">Logging.</param>
         public CharacterSelectionMessageHandler(
             MuplonenDbContext muplonenDbContext,
+            IRoomManager roomManager,
             ILogger<CharacterSelectionMessageHandler> logger)
         {
             _muplonenDbContext = muplonenDbContext;
+            _roomManager = roomManager;
             _logger = logger;
         }
 
@@ -53,10 +60,13 @@ namespace Muplonen.Clients.MessageHandlers
             }
 
             session.PlayerCharacter = playerCharacter;
-            await session.Connection.BuildAndSend(6, reply =>
+            await session.Connection.BuildAndSend(OutgoingMessages.CharacterSelection, reply =>
             {
                 reply.WriteByte(1);
             });
+
+            // Join room
+            await _roomManager.AddToRoomInstance(session, Guid.Empty);
 
             return true;
         }

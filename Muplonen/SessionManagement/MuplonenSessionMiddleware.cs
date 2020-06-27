@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 
-namespace Muplonen.Clients
+namespace Muplonen.SessionManagement
 {
     /// <summary>
     /// Accepts <see cref="WebSocket"/> connections and manages a player's session main loop.

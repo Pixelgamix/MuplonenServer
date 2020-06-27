@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
-using Muplonen.Clients.MessageHandlers;
+using Muplonen.GameSystems;
 using System;
-using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 
-namespace Muplonen.Clients
+namespace Muplonen.SessionManagement
 {
     /// <summary>
     /// Manages player sessions.
@@ -15,7 +14,7 @@ namespace Muplonen.Clients
     public sealed class PlayerSessionManager : IPlayerSessionManager
     {
         /// <inheritdoc/>
-        public ConcurrentDictionary<Guid, IPlayerSession> Clients { get; } = new ConcurrentDictionary<Guid, IPlayerSession>();
+        public SessionDictionary Sessions { get; } = new SessionDictionary();
 
         private readonly MessageHandlerTypes _messageHandlerTypes;
         private readonly ObjectPool<GodotMessage> _messageObjectPool;
@@ -48,13 +47,15 @@ namespace Muplonen.Clients
 
             using var scopedServiceProvider = _serviceProvider.CreateScope();
 
+            Sessions.TryAddSession(playerSession);
+
             try
             {
                 var isSessionAlive = await playerSession.Connection.Read(godotMessage);
                 while (isSessionAlive)
                 {
                     // Read message id and fetch message handler for the id
-                    ushort messageId = godotMessage.ReadUInt16();
+                    var messageId = godotMessage.ReadUInt16();
 
                     if (_messageHandlerTypes.TryGetHandlerForMessageId(scopedServiceProvider.ServiceProvider, messageId, out IMessageHandler? messageHandler))
                     {
@@ -64,7 +65,7 @@ namespace Muplonen.Clients
                     }
                     else
                     {
-                        _logger.LogDebug("Received unknown message id {0} from session {1}. Aborting session loop.", messageId, playerSession.SessionId);
+                        _logger.LogInformation("Received unknown message id {0} from session {1}. Aborting session loop.", messageId, playerSession.SessionId);
                         isSessionAlive = false;
                     }
                 }
@@ -72,7 +73,7 @@ namespace Muplonen.Clients
             catch (WebSocketException ex)
             {
                 // WebSocketExceptions are usually triggered by a client sending trash data and/or forcefully closing the connection.
-                _logger.LogDebug("Communication error with session {0}: {1}", playerSession.SessionId, ex.Message);
+                _logger.LogInformation("Communication error with session {0}: {1}", playerSession.SessionId, ex.Message);
             }
             catch (Exception ex)
             {
@@ -80,8 +81,7 @@ namespace Muplonen.Clients
             }
             finally
             {
-                if (playerSession.PlayerAccount != null)
-                    Clients.TryRemove(playerSession.PlayerAccount.Id, out _);
+                Sessions.RemoveSession(playerSession);
 
                 _logger.LogInformation("Disconnecting session {0}", playerSession.SessionId);
 

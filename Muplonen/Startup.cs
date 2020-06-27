@@ -6,11 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.ObjectPool;
-using Muplonen.Clients;
-using Muplonen.Clients.MessageHandlers;
 using Muplonen.DataAccess;
+using Muplonen.GameSystems;
 using Muplonen.Security;
 using Muplonen.Services;
+using Muplonen.SessionManagement;
+using Muplonen.World;
 using System;
 
 namespace Muplonen
@@ -49,6 +50,7 @@ namespace Muplonen
             services.AddSingleton<MessageHandlerTypes>();
             services.AddSingleton<IPlayerSessionManager, PlayerSessionManager>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
+            services.AddSingleton<IRoomManager, RoomManager>();
 
             // Register poool for message objects
             services.TryAddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
@@ -58,6 +60,8 @@ namespace Muplonen
                 var policy = new GodotMessagePooledObjectPolicy();
                 return provider.Create<GodotMessage>(policy);
             });
+
+            services.AddTransient<IRoomInstance, RoomInstance>();
 
             // Register message handlers
             foreach (Type messageHandler in MessageHandlerTypes.FindMessageHandlersInAssembly())

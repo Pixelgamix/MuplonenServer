@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Muplonen.Math;
+using System;
 using System.IO;
 using System.Text;
 
-namespace Muplonen.Clients
+namespace Muplonen.SessionManagement
 {
     /// <summary>
     /// A message received from the Godot client or for sending to the Godot client.
@@ -65,7 +66,7 @@ namespace Muplonen.Clients
         public int ReadInt32() => _binaryReader.ReadInt32();
 
         /// <summary>
-        /// Reads a string.
+        /// Reads a <see cref="String"/>.
         /// </summary>
         /// <returns>The read string.</returns>
         public string ReadString()
@@ -73,6 +74,18 @@ namespace Muplonen.Clients
             var length = _binaryReader.ReadInt32();
             var chars = _binaryReader.ReadChars(length);
             return new string(chars);
+        }
+
+        /// <summary>
+        /// Reads a <see cref="Vector3i"/>.
+        /// </summary>
+        /// <returns>The read <see cref="Vector3i"/>.</returns>
+        public Vector3i ReadVector3i()
+        {
+            var x = _binaryReader.ReadInt16();
+            var y = _binaryReader.ReadInt16();
+            var z = _binaryReader.ReadInt16();
+            return new Vector3i(x, y, z);
         }
 
         /// <summary>
@@ -103,13 +116,24 @@ namespace Muplonen.Clients
         public void WriteInt32(int number) => _binaryWriter.Write(number);
 
         /// <summary>
-        /// Writes a string.
+        /// Writes a <see cref="String"/>.
         /// </summary>
         /// <param name="text">The string to write.</param>
         public void WriteString(string text)
         {
             _binaryWriter.Write(text.Length);
             _binaryWriter.Write(_encoding.GetBytes(text));
+        }
+
+        /// <summary>
+        /// Writes a <see cref="Vector3i"/>.
+        /// </summary>
+        /// <param name="vector">The vector to write.</param>
+        public void WriteVector3i(Vector3i vector)
+        {
+            _binaryWriter.Write(vector.X);
+            _binaryWriter.Write(vector.Y);
+            _binaryWriter.Write(vector.Z);
         }
 
         /// <summary>
