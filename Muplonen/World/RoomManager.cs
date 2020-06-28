@@ -30,7 +30,7 @@ namespace Muplonen.World
         }
 
         /// <inheritdoc/>
-        public Task AddToRoomInstance(IPlayerSession playerSession, Guid roomInstanceId)
+        public Task AddPlayerToRoomInstance(IPlayerSession playerSession, Guid roomInstanceId)
         {
             if (!_roomInstances.TryGetValue(roomInstanceId, out IRoomInstance? roomInstance))
             {

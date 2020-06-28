@@ -15,6 +15,6 @@ namespace Muplonen.World
         /// <param name="playerSession">The player session.</param>
         /// <param name="roomInstanceId">The room instance.</param>
         /// <returns></returns>
-        Task AddToRoomInstance(IPlayerSession playerSession, Guid roomInstanceId);
+        Task AddPlayerToRoomInstance(IPlayerSession playerSession, Guid roomInstanceId);
     }
 }

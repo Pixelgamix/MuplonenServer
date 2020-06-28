@@ -66,7 +66,7 @@ namespace Muplonen.GameSystems.AccountSystem
             });
 
             // Join room
-            await _roomManager.AddToRoomInstance(session, Guid.Empty);
+            await _roomManager.AddPlayerToRoomInstance(session, Guid.Empty);
 
             return true;
         }
